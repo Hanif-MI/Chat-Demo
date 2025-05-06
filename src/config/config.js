@@ -4,7 +4,7 @@ dotenv.config();
 const config = {
   development: {
     username: process.env.DB_USER_NAME,
-    password: process.env.DB_PASSWORD,
+    password: process.env.DB_PASSWORD, 
     database: process.env.DB_DATABASE,
     host: process.env.DB_HOST_NAME,
     logging: true,
@@ -13,16 +13,20 @@ const config = {
   test: {
     username: process.env.DB_USER_NAME,
     password: process.env.DB_PASSWORD,
-    database: process.env.DB_DATABASE,
+    database: process.env.DB_DATABASE, 
     host: process.env.DB_HOST_NAME,
     dialect: "postgres",
   },
   production: {
-    username: process.env.DB_USER_NAME,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_DATABASE,
-    host: process.env.DB_HOST_NAME,
+    // Use connection string for cloud database in production
+    url: process.env.DATABASE_URL, // Add DATABASE_URL to your .env file
     dialect: "postgres",
+    dialectOptions: {
+      ssl: {
+        require: true,
+        rejectUnauthorized: false // Required for some cloud providers
+      }
+    }
   },
 };
 

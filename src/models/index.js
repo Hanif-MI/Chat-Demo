@@ -1,9 +1,9 @@
 'use strict';
-
+import dotenv from 'dotenv';  
+dotenv.config()
 import fs from 'fs';
 import path from 'path';
 import Sequelize from 'sequelize';
-import process from 'process';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 
@@ -16,9 +16,24 @@ const config = (await import(`${dirname(import.meta.url)}/../config/config.js`))
 const db = {};
 
 let sequelize;
-if (config.use_env_variable) {
+// Handle both local development DB and production connection URL
+if (env === 'production') {
+  console.log('production');
+  sequelize = new Sequelize(process.env.DATABASE_URL, {
+    dialect: 'postgres',
+    protocol: 'postgres',
+    dialectOptions: {
+      ssl: {
+        require: true,
+        rejectUnauthorized: false
+      }
+    }
+  });
+} else if (config.use_env_variable) {
+  console.log('local 1');
   sequelize = new Sequelize(process.env[config.use_env_variable], config);
 } else {
+  console.log('local',env);
   sequelize = new Sequelize(config.database, config.username, config.password, config);
 }
 
