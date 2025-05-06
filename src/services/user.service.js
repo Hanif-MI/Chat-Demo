@@ -1,4 +1,5 @@
 import db from "../models/index.js";
+import user from "../models/user.js";
 import { ApiError } from "../utils/ApiResponse.js";
 import { RESPONSE_CODE } from "../utils/constant.js";
 import {
@@ -6,8 +7,9 @@ import {
   generateToken,
   hashPassword,
 } from "../utils/helper.js";
+import { findRoomIdByUserPair } from "./chat.service.js";
 
-const { User } = db;
+const { User, message } = db;
 
 const signUpService = async (data) => {
   try {
@@ -58,6 +60,40 @@ const signInService = async ({ email, password }) => {
   }
 };
 
+const usersService = async () => {
+  try {
+    const users = await User.findAll({
+     // where: { email: { [Op.ne]: email } },
+      attributes: [
+        'id',
+        'username',
+        // 'avatar',
+        // 'lastMessage',
+        // 'lastMessageTime', 
+        // 'isOnline',
+        // 'unreadCount'
+      ],
+      raw: true
+    });
+
+    return {
+      users: users.map(user => ({
+        id: user.id,
+        username: user.username,
+        avatar: user.avatar || null,
+        lastMessage: user.lastMessage || null,
+        lastMessageTime: user.lastMessageTime || null,
+        isOnline: Boolean(user.isOnline),
+        unreadCount: user.unreadCount || 0
+      }))
+    };
+
+} catch (error) {
+    handleError(error);
+}};
+
+
+
 const handleError = (error) => {
   if (error instanceof ApiError) throw error;
   throw new ApiError(RESPONSE_CODE.INTERNAL_SERVER, error);
@@ -67,4 +103,25 @@ const findUserByEmail = async (email) => {
   return await User.findOne({ where: { email } });
 };
 
-export { signUpService, signInService };
+const getUserMessagesService = async (userId, currentUserId) => {
+  try {
+    // Check if the user exists
+    const room = await findRoomIdByUserPair(userId,currentUserId)
+    if (!room) {
+      throw new ApiError(RESPONSE_CODE.BAD_REQUEST, "Room not found");
+    }
+    console.log("room", room);
+    const messages = await message.findAll({
+      where: {
+        room
+      },
+      order: [['createdAt', 'ASC']],
+    });
+    console.log("messages", messages);
+    return messages;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+export { signUpService, signInService, handleError, usersService, getUserMessagesService };
